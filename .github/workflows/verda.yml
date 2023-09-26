@@ -40,7 +40,7 @@ jobs:
         go-version: '1.21'
 
     - name: Build project
-      run: go build -o verda ./start/main.go
+      run: GOOS=linux GOARCH=x86_64 go build -o verda ./main.go
 
     - name: Archive Artifacts
       run: tar -czvf verda-x86_64.tar.gz verda  # 创建一个压缩文件以存储构建结果
