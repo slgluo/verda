@@ -121,7 +121,7 @@ export const UploadAction: React.FC<UploadActionProps> = (props) => {
   const uploadProps: UploadProps = {
     showUploadList: false,
     beforeUpload: (file) => {
-      if (file.type !== 'application/zip') {
+      if (file.type !== 'application/zip' && file.type !== 'application/x-zip-compressed') {
         msg.error('只能上传zip文件格式')
         return false
       }
