@@ -3,14 +3,15 @@ package verdaccio
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/samber/lo"
-	"github.com/tidwall/pretty"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"verda/utils"
+
+	"github.com/pkg/errors"
+	"github.com/samber/lo"
+	"github.com/tidwall/pretty"
 )
 
 type PatchMessage struct {
@@ -35,7 +36,9 @@ func PatchStorage(src string, channel chan<- PatchMessage) error {
 	var total = int64(len(needPatchPackages))
 	var progress int64 = 0
 	for _, pkg := range needPatchPackages {
+		println("pkg=" + pkg.Name())
 		srcPkg, targetPkg := filepath.Join(src, pkg.Name()), filepath.Join(storagePath, pkg.Name())
+		println("src=" + srcPkg + ", target=" + targetPkg)
 
 		pkg := pkg
 
@@ -212,7 +215,10 @@ func mergePackageJson(src, dest string) (*Package, error) {
 
 func PatchPackage(srcPkgPath, targetPkgPath string) error {
 	// 不是文件夹则忽略
-	if !utils.IsDir(srcPkgPath) || !utils.IsDir(targetPkgPath) {
+	if !utils.IsDir(srcPkgPath) {
+		return nil
+	}
+	if utils.PathExists(targetPkgPath) && !utils.IsDir(targetPkgPath) {
 		return nil
 	}
 
