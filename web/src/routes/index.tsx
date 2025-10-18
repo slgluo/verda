@@ -1,12 +1,13 @@
+import { createFileRoute } from '@tanstack/react-router'
 import { useCallback, useState } from 'react'
-import {
-  UploadAction,
-  UploadFailed,
-  UploadSuccess,
-} from '@/components'
+import { UploadAction, UploadFailed, UploadSuccess } from '@/components'
 import { PatchResult } from '@/const'
 
-export function UploadPage() {
+export const Route = createFileRoute('/')({
+  component: Index,
+})
+
+function Index() {
   const [patchResult, setPatchResult] = useState(PatchResult.DEFAULT)
   const [tip, setTip] = useState('')
 
@@ -24,15 +25,15 @@ export function UploadPage() {
         <div className="w-xl flex flex-col justify-center items-center">
           {patchResult === PatchResult.DEFAULT
             ? (
-            <UploadAction onPatch={handlePatch} />
+                <UploadAction onPatch={handlePatch} />
               )
             : patchResult === PatchResult.SUCCESS
               ? (
-            <UploadSuccess onBack={handleBack} />
+                  <UploadSuccess onBack={handleBack} />
                 )
               : patchResult === PatchResult.FAIL
                 ? (
-            <UploadFailed title={tip} onBack={handleBack} />
+                    <UploadFailed title={tip} onBack={handleBack} />
                   )
                 : null}
         </div>
