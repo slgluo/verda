@@ -67,6 +67,55 @@ func PatchStorage(src string, channel chan<- PatchMessage) error {
 	return nil
 }
 
+type AjustMessage struct {
+	Pkg          string
+	AdjustResult string
+	Total        int64
+	Progress     int64
+}
+
+func AdjustStorage(channel chan<- AjustMessage) error {
+	storagePath, err := GetStoragePath()
+	if err != nil {
+		return errors.WithMessagef(err, "无法获取verdaccio storage path：%s", storagePath)
+	}
+
+	packages, err := os.ReadDir(storagePath)
+	if err != nil {
+		return errors.Wrapf(err, "读取storage目录失败：%s", storagePath)
+	}
+
+	var total = int64(len(packages))
+	var progress int64 = 0
+	for _, pkg := range packages {
+		packagePath := filepath.Join(storagePath, pkg.Name())
+
+		pkg := pkg
+
+		go func() {
+			err = AdjustPackage(packagePath)
+
+			atomic.AddInt64(&progress, 1)
+			if err != nil {
+				channel <- AjustMessage{
+					Pkg:          pkg.Name(),
+					AdjustResult: "fail",
+					Total:        total,
+					Progress:     progress,
+				}
+			} else {
+				channel <- AjustMessage{
+					Pkg:          pkg.Name(),
+					AdjustResult: "success",
+					Total:        total,
+					Progress:     progress,
+				}
+			}
+		}()
+	}
+	return nil
+}
+
 func AdjustPackage(packagePath string) error {
 	var (
 		pkg   *Package

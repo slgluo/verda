@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"github.com/gofiber/fiber/v2/log"
-	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -11,6 +9,9 @@ import (
 	response "verda/pkg"
 	"verda/pkg/verdaccio"
 	"verda/utils"
+
+	"github.com/gofiber/fiber/v2/log"
+	"github.com/pkg/errors"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -101,6 +102,25 @@ func PatchHandler(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.JSON(response.Success("打补丁成功", ctx))
+}
+
+func AdjustStorageHandler(ctx *fiber.Ctx) error {
+	channel := make(chan verdaccio.AjustMessage)
+	err := verdaccio.AdjustStorage(channel)
+
+	if err != nil {
+		return errors.WithMessage(err, "整理storage失败")
+	}
+
+	for msg := range channel {
+		p := float64(msg.Progress) / float64(msg.Total) * 100
+		log.Debugf("[%.2f%%] adjust %s %s\n", p, msg.Pkg, msg.AdjustResult)
+		if msg.Total == msg.Progress {
+			close(channel)
+		}
+	}
+
+	return ctx.JSON(response.Success("整理storage成功", ctx))
 }
 
 // 合并文件
