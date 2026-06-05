@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { tanstackRouter } from '@tanstack/router-plugin/vite'
-import react from '@vitejs/plugin-react-swc'
+import legacy from '@vitejs/plugin-legacy'
+import react from '@vitejs/plugin-react'
 import UnoCSS from 'unocss/vite'
 import { defineConfig } from 'vite'
 
@@ -13,6 +14,10 @@ export default defineConfig({
     }),
     react(),
     UnoCSS(),
+    legacy({
+      targets: ['chrome>=70'],
+      modernPolyfills: true,
+    }),
   ],
 
   server: {

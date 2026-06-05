@@ -1,11 +1,14 @@
 package storage
 
 import (
+	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 	response "verda/pkg"
 	"verda/pkg/verdaccio"
 	"verda/utils"
@@ -105,6 +108,10 @@ func PatchHandler(ctx *fiber.Ctx) error {
 }
 
 func AdjustStorageHandler(ctx *fiber.Ctx) error {
+	ctx.Set("Content-Type", "text/event-stream")
+	ctx.Set("Cache-Control", "no-cache")
+	ctx.Set("Connection", "keep-alive")
+
 	channel := make(chan verdaccio.AjustMessage)
 	err := verdaccio.AdjustStorage(channel)
 
@@ -112,15 +119,98 @@ func AdjustStorageHandler(ctx *fiber.Ctx) error {
 		return errors.WithMessage(err, "整理storage失败")
 	}
 
-	for msg := range channel {
-		p := float64(msg.Progress) / float64(msg.Total) * 100
-		log.Debugf("[%.2f%%] adjust %s %s\n", p, msg.Pkg, msg.AdjustResult)
-		if msg.Total == msg.Progress {
-			close(channel)
+	ctx.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
+		for msg := range channel {
+			p := float64(msg.Progress) / float64(msg.Total) * 100
+			log.Debugf("[%.2f%%] adjust %s %s\n", p, msg.Pkg, msg.AdjustResult)
+
+			data := fmt.Sprintf(`{"pkg":"%s","result":"%s","progress":%d,"total":%d}`,
+				msg.Pkg, msg.AdjustResult, msg.Progress, msg.Total)
+			fmt.Fprintf(w, "data: %s\n\n", data)
+			w.Flush()
+
+			if msg.Total == msg.Progress {
+				close(channel)
+			}
 		}
+
+		fmt.Fprintf(w, "event: done\ndata: {}\n\n")
+		w.Flush()
+	})
+
+	return nil
+}
+
+// ListStoragePackagesHandler 分页获取 verdaccio storage 下的包，支持模糊查询包名
+func ListStoragePackagesHandler(ctx *fiber.Ctx) error {
+	// 查询参数
+	pageStr := ctx.Query("page", "1")
+	pageSizeStr := ctx.Query("pageSize", "20")
+	keyword := ctx.Query("keyword", "")
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err != nil || pageSize < 1 {
+		pageSize = 20
 	}
 
-	return ctx.JSON(response.Success("整理storage成功", ctx))
+	// 获取全部包名（含 scope）
+	all, err := verdaccio.GeStorageAllPackages()
+	if err != nil {
+		return errors.WithMessage(err, "获取包列表失败")
+	}
+
+	// 模糊过滤（不区分大小写）
+	var filtered []string
+	if keyword = strings.TrimSpace(keyword); keyword != "" {
+		kw := strings.ToLower(keyword)
+		for _, name := range all {
+			if strings.Contains(strings.ToLower(name), kw) {
+				filtered = append(filtered, name)
+			}
+		}
+	} else {
+		filtered = all
+	}
+
+	// 分页
+	total := len(filtered)
+	start := (page - 1) * pageSize
+	if start > total {
+		start = total
+	}
+	end := start + pageSize
+	if end > total {
+		end = total
+	}
+	itemsNames := filtered[start:end]
+
+	storagePath, err := verdaccio.GetStoragePath()
+	if err != nil {
+		return errors.WithMessage(err, "获取 storage 路径失败")
+	}
+
+	var items []verdaccio.PackageSummary
+	for _, name := range itemsNames {
+		pkgPath := filepath.Join(storagePath, name)
+		pkg, err := verdaccio.GetPackage(pkgPath)
+		if err != nil {
+			log.Errorf("获取包信息失败 %s: %v", name, err)
+			items = append(items, verdaccio.PackageSummary{Name: name})
+			continue
+		}
+		items = append(items, pkg.GetSummary())
+	}
+
+	return ctx.JSON(response.Success(fiber.Map{
+		"total":    total,
+		"page":     page,
+		"pageSize": pageSize,
+		"items":    items,
+	}, ctx))
 }
 
 // 合并文件

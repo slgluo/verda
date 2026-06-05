@@ -9,5 +9,6 @@ func Register(api fiber.Router) {
 
 	storage.Post("/upload", UploadHandler)
 	storage.Post("/patch", PatchHandler)
-	storage.Post("/adjust", AdjustStorageHandler)
+	storage.Get("/adjust", AdjustStorageHandler)
+	storage.Get("/packages", ListStoragePackagesHandler)
 }

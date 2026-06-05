@@ -150,7 +150,7 @@ func AdjustPackage(packagePath string) error {
 	}
 	localVersions := GetVersions(dists)
 	// 更新versions字段
-	newVersions := make(map[string]interface{})
+	newVersions := make(map[string]any)
 	for k, v := range pkg.Versions {
 		if lo.Contains(localVersions, k) {
 			newVersions[k] = v
@@ -281,7 +281,7 @@ func PatchPackage(srcPkgPath, targetPkgPath string) error {
 			a, b := filepath.Join(srcPkgPath, pkg.Name()), filepath.Join(targetPkgPath, pkg.Name())
 			err := PatchPackage(a, b)
 			if err != nil {
-				fmt.Printf("patch [%s -> %s] 失败 <%w>\n", filepath.Base(a), pkg, err)
+				fmt.Printf("patch [%s -> %s] 失败 <%v>\n", filepath.Base(a), pkg, err)
 			}
 		}
 		return nil

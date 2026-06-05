@@ -1,12 +1,15 @@
 package verdaccio
 
 import (
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"verda/utils"
+
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"gopkg.in/yaml.v3"
-	"os"
-	"path/filepath"
-	"verda/utils"
 )
 
 type Config struct {
@@ -89,4 +92,60 @@ func GeStoragePackages() ([]string, error) {
 		return item.Name()
 	})
 	return packages, nil
+}
+
+func hasTgzFile(dir string) bool {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false
+	}
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".tgz") {
+			return true
+		}
+	}
+	return false
+}
+
+// GeStorageAllPackages 返回 storage 下的所有包名（包含 scope 目录内的包），格式：name 或 @scope/name
+func GeStorageAllPackages() ([]string, error) {
+	storagePath, err := GetStoragePath()
+	if err != nil {
+		return nil, errors.WithMessage(err, "无法获取storage path")
+	}
+	top, err := os.ReadDir(storagePath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "无法读取 storage path：%s", storagePath)
+	}
+	var names []string
+	for _, entry := range top {
+		if !entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if strings.HasPrefix(name, "@") {
+			// scope 目录，读取其子目录
+			subDir := filepath.Join(storagePath, name)
+			subs, err := os.ReadDir(subDir)
+			if err != nil {
+				return nil, errors.Wrapf(err, "无法读取 scope 目录：%s", subDir)
+			}
+			for _, sub := range subs {
+				if sub.IsDir() {
+					pkgDir := filepath.Join(subDir, sub.Name())
+					if hasTgzFile(pkgDir) {
+						names = append(names, name+"/"+sub.Name())
+					}
+				}
+			}
+		} else {
+			pkgDir := filepath.Join(storagePath, name)
+			if hasTgzFile(pkgDir) {
+				names = append(names, name)
+			}
+		}
+	}
+	// 稳定排序
+	sort.Strings(names)
+	return names, nil
 }

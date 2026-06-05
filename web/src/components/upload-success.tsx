@@ -9,8 +9,12 @@ export const UploadSuccess: React.FC<UploadSuccessProps> = (props: UploadSuccess
   const { onBack } = props
 
   return (
-    <Result status={'success'} title={'合并依赖成功'} extra={[
-      <Button onClick={onBack} key="back">返回</Button>,
-    ]} />
+    <Result
+      status="success"
+      title="合并依赖成功"
+      extra={[
+        <Button onClick={onBack} key="back">返回</Button>,
+      ]}
+    />
   )
 }

@@ -1,10 +1,10 @@
-import React, { useState } from 'react'
 import type { RcFile, UploadFile, UploadProps } from 'antd/es/upload/interface'
-import { Button, Modal, Spin, Upload, message } from 'antd'
 import { InboxOutlined, LoadingOutlined } from '@ant-design/icons'
-import { BusinessError, request } from '@/http'
-import { useComputeFileMD5 } from '@/hooks/use-compute-file-md5'
+import { Button, message, Modal, Spin, Upload } from 'antd'
+import React, { useState } from 'react'
 import { PatchResult } from '@/const'
+import { useComputeFileMD5 } from '@/hooks/use-compute-file-md5'
+import { BusinessError, request } from '@/http'
 
 export interface UploadActionProps {
   onPatch?: (patchResult: number, message: string) => void
@@ -88,6 +88,7 @@ export const UploadAction: React.FC<UploadActionProps> = (props) => {
 
       setIsModalOpen(false)
       msg.error(statusText)
+      console.error('上传文件失败', error)
       return
     }
 
@@ -137,10 +138,10 @@ export const UploadAction: React.FC<UploadActionProps> = (props) => {
       <Dragger {...uploadProps} className="w-[36rem] h-[12rem]">
         {!uploadFile
           ? (
-          <InboxOutlined className="text-6xl" style={{ color: ThemeColor }} />
+              <InboxOutlined className="text-6xl" style={{ color: ThemeColor }} />
             )
           : (
-          <span className="text-blue text-lg">{uploadFile.name}</span>
+              <span className="text-blue text-lg">{uploadFile.name}</span>
             )}
 
         <div>点击或拖拽文件到区域内上传</div>
@@ -148,8 +149,8 @@ export const UploadAction: React.FC<UploadActionProps> = (props) => {
 
       <Button
         className="w-[8rem] h-[2.5rem] mt-4"
-        type={'primary'}
-        shape={'round'}
+        type="primary"
+        shape="round"
         onClick={handleUploadClick}
       >
         上传
@@ -160,7 +161,7 @@ export const UploadAction: React.FC<UploadActionProps> = (props) => {
         centered={true}
         footer={null}
         closeIcon={false}
-        width={'14rem'}
+        width="14rem"
         maskClosable={false}
       >
         <div className="flex items-center content-center p-y-8 p-x-4">

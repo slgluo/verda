@@ -11,8 +11,12 @@ export const UploadFailed: React.FC<UploadFailedProps> = (props: UploadFailedPro
   const { onBack, ...resultProps } = props
 
   return (
-    <Result status={'error'} {...resultProps} extra={[
-      <Button onClick={onBack} key="back">返回</Button>,
-    ]} />
+    <Result
+      status="error"
+      {...resultProps}
+      extra={[
+        <Button onClick={onBack} key="back">返回</Button>,
+      ]}
+    />
   )
 }

@@ -2,19 +2,17 @@ package verdaccio
 
 import (
 	"encoding/json"
-	"github.com/Masterminds/semver/v3"
-	"github.com/pkg/errors"
-	"github.com/samber/lo"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 	"time"
-)
 
-type Version struct {
-}
+	"github.com/Masterminds/semver/v3"
+	"github.com/pkg/errors"
+	"github.com/samber/lo"
+)
 
 type Attachment struct {
 	Shasum string `json:"shasum"`
@@ -27,17 +25,27 @@ type DistFile struct {
 }
 
 type Package struct {
-	Name        string                 `json:"name"`
-	Versions    map[string]interface{} `json:"versions"`
-	Time        map[string]string      `json:"time"`
-	Users       interface{}            `json:"users"`
-	DistTags    map[string]string      `json:"dist-tags"`
-	Uplinks     interface{}            `json:"_uplinks"`
-	DistFiles   map[string]DistFile    `json:"_distfiles"`
-	Attachments map[string]Attachment  `json:"_attachments"`
-	Rev         string                 `json:"_rev"`
-	Id          string                 `json:"_id"`
-	Readme      string                 `json:"readme"`
+	Name        string                `json:"name"`
+	Versions    map[string]any        `json:"versions"`
+	Time        map[string]string     `json:"time"`
+	Users       interface{}           `json:"users"`
+	DistTags    map[string]string     `json:"dist-tags"`
+	Uplinks     interface{}           `json:"_uplinks"`
+	DistFiles   map[string]DistFile   `json:"_distfiles"`
+	Attachments map[string]Attachment `json:"_attachments"`
+	Rev         string                `json:"_rev"`
+	Id          string                `json:"_id"`
+	Readme      string                `json:"readme"`
+}
+
+type PackageSummary struct {
+	Name        string   `json:"name"`
+	Version     string   `json:"version"`
+	Description string   `json:"description"`
+	Keywords    []string `json:"keywords"`
+	Author      string   `json:"author"`
+	UpdatedAt   string   `json:"updatedAt"`
+	License     string   `json:"license"`
 }
 
 func GetPackage(path string) (*Package, error) {
@@ -126,4 +134,61 @@ func GetLatestDist(dists []string) string {
 	} else {
 		return ""
 	}
+}
+
+func (p *Package) GetSummary() PackageSummary {
+	latestVersion := p.DistTags["latest"]
+	if latestVersion == "" {
+		// 如果没有 latest 标签，尝试获取最新的版本号
+		versions := GetSortedVersions(p.Time)
+		if len(versions) > 0 {
+			latestVersion = versions[0]
+		}
+	}
+
+	summary := PackageSummary{
+		Name: p.Name,
+	}
+
+	if raw, ok := p.Versions[latestVersion]; ok {
+		if vInfo, ok := raw.(map[string]any); ok {
+			if v, ok := vInfo["version"].(string); ok {
+				summary.Version = v
+			}
+			if d, ok := vInfo["description"].(string); ok {
+				summary.Description = d
+			}
+			if kRaw, ok := vInfo["keywords"].([]any); ok {
+				for _, k := range kRaw {
+					if s, ok := k.(string); ok {
+						summary.Keywords = append(summary.Keywords, s)
+					}
+				}
+			}
+			switch l := vInfo["license"].(type) {
+			case string:
+				summary.License = l
+			case map[string]any:
+				if t, ok := l["type"].(string); ok {
+					summary.License = t
+				}
+			}
+			switch a := vInfo["author"].(type) {
+			case string:
+				summary.Author = a
+			case map[string]any:
+				if name, ok := a["name"].(string); ok {
+					summary.Author = name
+				}
+			}
+		}
+	}
+
+	if updatedAt, ok := p.Time[latestVersion]; ok {
+		summary.UpdatedAt = updatedAt
+	} else if modified, ok := p.Time["modified"]; ok {
+		summary.UpdatedAt = modified
+	}
+
+	return summary
 }

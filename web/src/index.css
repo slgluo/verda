@@ -36,3 +36,18 @@ body {
   justify-content: center;
   width: 100%;
 }
+
+.cus-scrollbar {
+  overflow-y: auto;
+}
+
+.cus-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.cus-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cus-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
