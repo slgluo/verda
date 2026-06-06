@@ -3,6 +3,7 @@ package storage
 import (
 	"bufio"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -210,6 +211,53 @@ func ListStoragePackagesHandler(ctx *fiber.Ctx) error {
 		"page":     page,
 		"pageSize": pageSize,
 		"items":    items,
+	}, ctx))
+}
+
+// GetStoragePackageHandler 获取 storage 下某个包的完整详情（含 versions、dist-tags、time、readme 等）
+// 路径示例：/api/storage/packages/lodash 或 /api/storage/packages/@vue%2Freactivity
+func GetStoragePackageHandler(ctx *fiber.Ctx) error {
+	raw := ctx.Params("+")
+	if raw == "" {
+		return errors.New("包名不能为空")
+	}
+
+	name, err := url.QueryUnescape(raw)
+	if err != nil {
+		name = raw
+	}
+	// 防止越权访问
+	if strings.Contains(name, "..") {
+		return errors.New("非法的包名")
+	}
+
+	storagePath, err := verdaccio.GetStoragePath()
+	if err != nil {
+		return errors.WithMessage(err, "获取 storage 路径失败")
+	}
+
+	pkgPath := filepath.Join(storagePath, name)
+	if !utils.PathExists(pkgPath) {
+		return errors.New("包不存在：" + name)
+	}
+
+	pkg, err := verdaccio.GetPackage(pkgPath)
+	if err != nil {
+		return errors.WithMessage(err, "获取包信息失败")
+	}
+
+	dependents, err := verdaccio.GetDependents(name)
+	if err != nil {
+		log.Errorf("获取依赖方失败 %s: %v", name, err)
+		dependents = []string{}
+	}
+
+	dists, _ := verdaccio.GetLocalDistFiles(pkgPath)
+
+	return ctx.JSON(response.Success(fiber.Map{
+		"package":    pkg,
+		"dependents": dependents,
+		"distFiles":  dists,
 	}, ctx))
 }
 

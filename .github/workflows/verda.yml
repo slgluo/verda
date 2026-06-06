@@ -37,7 +37,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: '1.26.1'
 
     - name: Build project
       run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o verda ./main.go

@@ -48,6 +48,56 @@ type PackageSummary struct {
 	License     string   `json:"license"`
 }
 
+// GetDependents 遍历 storage 下的所有包，返回所有依赖了 target 的包名
+func GetDependents(target string) ([]string, error) {
+	all, err := GeStorageAllPackages()
+	if err != nil {
+		return nil, err
+	}
+	storagePath, err := GetStoragePath()
+	if err != nil {
+		return nil, err
+	}
+	dependents := make([]string, 0)
+	for _, name := range all {
+		if name == target {
+			continue
+		}
+		pkg, err := GetPackage(filepath.Join(storagePath, name))
+		if err != nil {
+			continue
+		}
+		latest := pkg.DistTags["latest"]
+		if latest == "" {
+			continue
+		}
+		raw, ok := pkg.Versions[latest]
+		if !ok {
+			continue
+		}
+		vInfo, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		if hasDep(vInfo, "dependencies", target) ||
+			hasDep(vInfo, "devDependencies", target) ||
+			hasDep(vInfo, "peerDependencies", target) {
+			dependents = append(dependents, name)
+		}
+	}
+	sort.Strings(dependents)
+	return dependents, nil
+}
+
+func hasDep(vInfo map[string]any, key, target string) bool {
+	deps, ok := vInfo[key].(map[string]any)
+	if !ok {
+		return false
+	}
+	_, exists := deps[target]
+	return exists
+}
+
 func GetPackage(path string) (*Package, error) {
 	jsonPath := filepath.Join(path, "package.json")
 	content, err := os.ReadFile(jsonPath)

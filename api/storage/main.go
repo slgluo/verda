@@ -11,4 +11,5 @@ func Register(api fiber.Router) {
 	storage.Post("/patch", PatchHandler)
 	storage.Get("/adjust", AdjustStorageHandler)
 	storage.Get("/packages", ListStoragePackagesHandler)
+	storage.Get("/packages/+", GetStoragePackageHandler)
 }
