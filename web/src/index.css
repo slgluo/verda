@@ -42,12 +42,39 @@ body {
 }
 
 .cus-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 .cus-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .cus-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 3px;
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: 99px;
+}
+.cus-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.4);
+}
+
+/* Ant Design 全局覆盖 */
+.ant-btn-primary {
+  background: linear-gradient(135deg, #6366f1, #9333ea) !important;
+  border: none !important;
+}
+
+.ant-pagination-item-active {
+  border-color: #6366f1 !important;
+}
+.ant-pagination-item-active a {
+  color: #6366f1 !important;
+}
+.ant-pagination-item:hover a {
+  color: #6366f1 !important;
+}
+.ant-pagination-item:hover {
+  border-color: #a5b4fc !important;
+}
+.ant-pagination-prev:hover .ant-pagination-item-link,
+.ant-pagination-next:hover .ant-pagination-item-link {
+  color: #6366f1 !important;
+  border-color: #a5b4fc !important;
 }

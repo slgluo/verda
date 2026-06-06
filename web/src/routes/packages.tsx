@@ -100,19 +100,23 @@ export function PackagesPage() {
   const total = data?.data.total ?? 0
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 p-8 flex flex-col">
-      <PackageFilters
-        keyword={keyword}
-        onSearchChange={(val) => {
-          setKeyword(val)
-          setPage(1)
-        }}
-        onUploadClick={() => setIsUploadModalOpen(true)}
-        onAdjustClick={handleAdjust}
-        adjustLoading={adjustLoading}
-      />
+    <div className="w-full min-h-screen bg-[#f8f9fc] flex flex-col">
+      {/* 顶部 Header 区域 */}
+      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100 px-8 py-4 shadow-[0_1px_0_rgba(0,0,0,0.04)]">
+        <PackageFilters
+          keyword={keyword}
+          onSearchChange={(val) => {
+            setKeyword(val)
+            setPage(1)
+          }}
+          onUploadClick={() => setIsUploadModalOpen(true)}
+          onAdjustClick={handleAdjust}
+          adjustLoading={adjustLoading}
+        />
+      </header>
 
-      <main className="flex-1 cus-scrollbar p-6">
+      {/* 主内容区 */}
+      <main className="flex-1 cus-scrollbar px-8 py-6">
         <PackageList
           isLoading={isLoading}
           isError={isError}
@@ -122,8 +126,14 @@ export function PackagesPage() {
         />
       </main>
 
+      {/* 分页器 */}
       {!isLoading && !isError && items.length > 0 && (
-        <div className="flex items-center justify-center mt-8 pt-6 border-t border-gray-200">
+        <div className="flex items-center justify-between px-8 py-4 bg-white border-t border-gray-100">
+          <span className="text-sm color-#9ca3af">
+            {isFetching
+              ? '加载中...'
+              : `共 ${total} 个包`}
+          </span>
           <Pagination
             current={page}
             pageSize={pageSize}
@@ -131,7 +141,8 @@ export function PackagesPage() {
             showSizeChanger={false}
             disabled={isFetching}
             onChange={p => setPage(p)}
-            showTotal={(t, range) => `第 ${range[0]}-${range[1]} 条，共 ${t} 个包${isFetching ? '（加载中...）' : ''}`}
+            showTotal={(_, range) => `第 ${range[0]}–${range[1]} 条`}
+            className="[&_.ant-pagination-item-active]:!border-indigo-500 [&_.ant-pagination-item-active_a]:!color-indigo-600 [&_.ant-pagination-item:hover_a]:!color-indigo-500 [&_.ant-pagination-item:hover]:!border-indigo-300"
           />
         </div>
       )}
