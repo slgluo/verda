@@ -14,10 +14,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: 24.16.0
 
@@ -46,7 +46,7 @@ jobs:
       run: tar -czvf verda-amd64.tar.gz verda  # 创建一个压缩文件以存储构建结果
 
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: verda-amd64
         path: verda-amd64.tar.gz  # 上传构建结果
